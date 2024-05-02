@@ -1,30 +1,26 @@
 ﻿using CommandLine;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces;
-using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace PngEmbed;
 
 public class Options
 {
-  [Option('w', "width", Required = false, Default = 600, HelpText = "Image width in pixels.")]
+  [Option('i', "input", Required = true, Default = "test.zip",
+    HelpText = "Input file-name (PNG for extract, everything else for embed).")]
+  public string InputFileName { get; set; } = "test.zip";
+
+  [Option('o', "output", Required = false, Default = "",
+    HelpText = "Output file-name (PNG for embed, everything else for renaming extracted file).")]
+  public string FileName { get; set; } = "";
+
+  [Option('w', "width", Required = false, Default = 1024,
+    HelpText = "Image width in pixels for embedding.")]
   public int Width { get; set; }
 
-  [Option('h', "height", Required = false, Default = 450, HelpText = "Image height in pixels.")]
-  public int Height { get; set; }
-
-  [Option('t', "tile-size", Required = false, Default = 10, HelpText = "Tile size in pixels.")]
-  public int TileSize { get; set; }
-
-  [Option('o', "output", Required = false, Default = "output.png", HelpText = "Output file-name.")]
-  public string FileName { get; set; } = "output.png";
-
-  [Option("hsv1", Required = false, HelpText = "Color1 in HSV format (Hue in degrees, Sat 0.0 to 1.0, Val 0.0 to 1.0).")]
-  public IEnumerable<float>? Hsv1 { get; set; }
-
-  [Option("hsv2", Required = false, HelpText = "Color2 in HSV format (Hue in degrees, Sat 0.0 to 1.0, Val 0.0 to 1.0).")]
-  public IEnumerable<float>? Hsv2 { get; set; }
+  [Option('m', "message", Required = false, Default = "Use https://github.com/pepcape/pngembed to extract the file",
+    HelpText = "Readable message for the PNG.")]
+  public string Message { get; set; } = "";
 }
 
 internal class Program
@@ -38,31 +34,15 @@ internal class Program
     Parser.Default.ParseArguments<Options>(args)
        .WithParsed<Options>(o =>
        {
-         if (o.Hsv1 != null && o.Hsv1.Count() >= 3)
-         {
-           var hsvList = o.Hsv1.ToList();
-           var hsvColor = new Hsv(hsvList[0], hsvList[1], hsvList[2]);
-           var rgbColor = ColorSpaceConverter.ToRgb(hsvColor);
-           FirstColor = new Rgba32(rgbColor.R, rgbColor.G, rgbColor.B);
-         }
-
-         if (o.Hsv2 != null && o.Hsv2.Count() >= 3)
-         {
-           var hsvList = o.Hsv2.ToList();
-           var hsvColor = new Hsv(hsvList[0], hsvList[1], hsvList[2]);
-           var rgbColor = ColorSpaceConverter.ToRgb(hsvColor);
-           SecondColor = new Rgba32(rgbColor.R, rgbColor.G, rgbColor.B);
-         }
-
          // Create a new image with the specified dimensions
-         using (var image = new Image<Rgba32>(o.Width, o.Height))
+         using (var image = new Image<Rgba32>(o.Width, o.Width))
          {
-           for (int y = 0; y < o.Height; y++)
+           for (int y = 0; y < o.Width; y++)
            {
              for (int x = 0; x < o.Width; x++)
              {
                // Determine the tile color based on position
-               Rgba32 tileColor = ((x / o.TileSize) + (y / o.TileSize)) % 2 == 0
+               Rgba32 tileColor = ((x / 100) + (y / 100)) % 2 == 0
                 ? FirstColor   // even tiles
                 : SecondColor; // odd tiles
 
